@@ -1,2 +1,12 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+
+# Database related
 db
 !db/*/*.fasta
