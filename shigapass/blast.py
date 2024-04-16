@@ -84,7 +84,7 @@ class Blast:
                 if filename.endswith('.fasta'):
                     subprocess.run(f"makeblastdb -dbtype nucl -in {os.path.join(root, filename)}", shell=True, check=True)
 
-    def run(self, list_file, outdir):
+    def run(self, list_file, outdir, keep_files):
         with open(list_file, 'r') as f:
             input_files = f.read().splitlines()
 
@@ -93,12 +93,17 @@ class Blast:
                 tempdir = tempfile.mkdtemp(prefix="ShigaPass_")
                 input_fasta_file = os.path.join(tempdir, input_filename + "_parsed.fasta")
                 shutil.copy(filepath, input_fasta_file)
+                new_outdir = os.path.join(outdir, input_filename)
+                if not os.path.exists(new_outdir):
+                    os.makedirs(new_outdir)
 
                 for search_parameters in db_config_array:
-                    self.run_blastn(outdir, input_filename, input_fasta_file, search_parameters["db_fasta"],
+                    self.run_blastn(new_outdir, input_filename, input_fasta_file, search_parameters["db_fasta"],
                                     search_parameters["db_marker"], search_parameters["identity"],
                                     search_parameters["coverage"])
-                    self.get_hits(outdir, input_filename, search_parameters["db_marker"])
-                    self.coverage_hits(outdir, input_filename, search_parameters["db_marker"])
+                    self.get_hits(new_outdir, input_filename, search_parameters["db_marker"])
+                    self.coverage_hits(new_outdir, input_filename, search_parameters["db_marker"])
 
                 shutil.rmtree(tempdir)
+                if not keep_files:
+                    shutil.rmtree(new_outdir)

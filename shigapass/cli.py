@@ -11,6 +11,6 @@ def get_args():
     parser.add_argument("-d", "--db", dest="db", required=True, help="Path to databases directory")
     parser.add_argument("-t", "--threads", dest="threads", type=int, default=2, help="Number of threads (default: 2)")
     parser.add_argument("-u", "--mkdb", dest="mkdb", action="store_true", help="Call the makeblastdb utility for databases initialisation")
-    parser.add_argument("-k", "--keep", dest="keep", action="store_true", help="Do not remove subdirectories")
+    parser.add_argument("-k", "--keep", dest="keep_files", action="store_true", help="Do not remove subdirectories")
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {VERSION}", help="Display version")
     return parser

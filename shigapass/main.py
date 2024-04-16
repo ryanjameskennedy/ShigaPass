@@ -24,4 +24,4 @@ class OptionsParser:
         if options.mkdb:
             blast.make_blast_db()
 
-        blast.run(options.list_file, options.outdir)
+        blast.run(options.list_file, options.outdir, options.keep_files)
