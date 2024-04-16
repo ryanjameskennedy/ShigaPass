@@ -10,3 +10,4 @@ dist/
 # Database related
 db
 !db/*/*.fasta
+test/Input/*.fasta

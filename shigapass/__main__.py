@@ -11,7 +11,6 @@ def print_help():
     print(f"""
                     ...::: ShigaPass v{VERSION} :::...
 Author(s): Iman Yassine
-          Ryan James Kennedy
 
 Description: This tool is used to predict Shigella serotypes.
 
