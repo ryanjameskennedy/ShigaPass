@@ -4,7 +4,7 @@ db_config_array = [
     {"db_fasta": "RFB/galF_SB1.fasta", "db_marker": "additionalrfb", "identity": 98, "coverage": 95},
     {"db_fasta": "RFB/RFB_serogroup_D_150-mers.fasta", "db_marker": "additionalrfb", "identity": 100, "coverage": 100},
     {"db_fasta": "RFB/POAC-genes_150-mers.fasta", "db_marker": "POAC", "identity": 98, "coverage": 95},
-    {"db_fasta": "BLAST_awk FLIC/fliC_Shigella_v1.fasta", "db_marker": "flic", "identity": 98, "coverage": 95},
+    {"db_fasta": "FLIC/fliC_Shigella_v1.fasta", "db_marker": "flic", "identity": 98, "coverage": 95},
     {"db_fasta": "CRISPR/CRISPR_spacers.fasta", "db_marker": "crispr", "identity": 100, "coverage": 100}
 ]
 

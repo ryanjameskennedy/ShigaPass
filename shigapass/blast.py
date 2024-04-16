@@ -38,45 +38,53 @@ class Blast:
         # Combine the results to infer the serotype
         pass
 
-    def write_out(self, count_dict, outdir, filename, db_marker):
-        with open(os.path.join(outdir, filename, f"{db_marker}_hits.txt"), 'w') as f:
+    def write_out(self, count_dict, outdir, input_filename, db_marker):
+        with open(os.path.join(outdir, input_filename, f"{db_marker}_hits.txt"), 'w') as fout:
             for gene, count in count_dict.items():
-                f.write(f"{gene};{count}\n")
+                fout.write(f"{gene};{count}\n")
 
     def coverage_hits(self, outdir, input_filename, db_marker):
-        with open(os.path.join(outdir, input_filename, f"{db_marker}_hits.txt"), 'r') as f1, \
-            open(os.path.join(self.db, 'RFB_hits_count.csv'), 'r') as f2, \
-            open(os.path.join(outdir, input_filename, f"{db_marker}_hitscoverage.txt"), 'w') as f3:
-            for line in f1:
-                parts1 = line.strip().split(';')
-                for line2 in f2:
-                    parts2 = line2.strip().split(';')
+        hits_fpath = os.path.join(outdir, input_filename, f"{db_marker}_hits.txt")
+        rfb_hits_count_fpath = os.path.join(self.db, 'RFB_hits_count.csv')
+        hitscov_fpath = os.path.join(outdir, input_filename, f"{db_marker}_hitscoverage.txt")
+        with open(hits_fpath, 'r') as fin1, \
+            open(rfb_hits_count_fpath, 'r') as fin2, \
+            open(hitscov_fpath, 'w') as fout:
+            for line in fin1:
+                parts1 = line.rstrip().split(';')
+                for line2 in fin2:
+                    parts2 = line2.rstrip().split(';')
                     if parts1[0] == parts2[0]:
-                        coverage = float(parts1[1]) / float(parts1[2]) * 100
-                        f3.write(f"{line.strip()};{coverage}\n")
+                        coverage = float(parts1[1]) / float(parts2[1]) * 100
+                        fout.write(f"{line.rstrip()};{parts2[1]};{coverage}\n")
                         break
 
     def run_blastn(self, outdir, input_filename, input_fasta_file, db_fasta, db_marker, identity, coverage):
         blast_cmd = f"blastn -db {self.db}/{db_fasta} -query {input_fasta_file} -out {os.path.join(outdir, input_filename, f'{db_marker}_blastout.txt')} -num_threads {self.threads} -num_alignments 10000 -outfmt 6 -word_size 11 -dust no"
         subprocess.run(blast_cmd, shell=True, check=True)
-        self.filter_blast(identity, coverage)
+        self.filter_blast(outdir, input_filename, db_marker, identity, coverage)
 
     def filter_blast(self, outdir, input_filename, db_marker, identity, coverage):
         with open(os.path.join(outdir, input_filename, f'{db_marker}_blastout.txt'), 'r') as blastfile, \
             open(os.path.join(outdir, input_filename, f'{db_marker}_allrecords.txt'), 'w') as fout:
             for line in blastfile:
                 parts = line.rstrip().split('\t')
-                if float(parts[2]) >= identity and (float(parts[3]) / float(parts[1])) * 100 >= coverage:
+                length = float(parts[3])
+                q_start = float(parts[6])
+                q_end = float(parts[7])
+                q_len = q_end - q_start + 1
+                if float(parts[2]) >= identity and (length / q_len) * 100 >= coverage:
                     fout.write(line)
 
     def get_hits(self, outdir, input_filename, db_marker):
-        with open(os.path.join(outdir, input_filename, f"{db_marker}_allrecords.txt"), 'r') as f:
-            lines = f.readlines()
-            gene_counts = {}
-            for line in lines:
+        gene_counts = {}
+        with open(os.path.join(outdir, input_filename, f"{db_marker}_allrecords.txt"), 'r') as fin:
+            for line in fin:
                 parts = line.strip().split('\t')
                 gene = parts[1].split('_')[0]
                 gene_counts[gene] = gene_counts.get(gene, 0) + 1
+        sorted_gene_counts = dict(sorted(gene_counts.items(), key=lambda item: item[1], reverse=True))
+        self.write_out(sorted_gene_counts, outdir, input_filename, db_marker)
     
     def make_blast_db(self):
         for root, dirs, files in os.walk(self.db):
@@ -98,11 +106,11 @@ class Blast:
                     os.makedirs(new_outdir)
 
                 for search_parameters in db_config_array:
-                    self.run_blastn(new_outdir, input_filename, input_fasta_file, search_parameters["db_fasta"],
+                    self.run_blastn(outdir, input_filename, input_fasta_file, search_parameters["db_fasta"],
                                     search_parameters["db_marker"], search_parameters["identity"],
                                     search_parameters["coverage"])
-                    self.get_hits(new_outdir, input_filename, search_parameters["db_marker"])
-                    self.coverage_hits(new_outdir, input_filename, search_parameters["db_marker"])
+                    self.get_hits(outdir, input_filename, search_parameters["db_marker"])
+                    self.coverage_hits(outdir, input_filename, search_parameters["db_marker"])
 
                 shutil.rmtree(tempdir)
                 if not keep_files:
