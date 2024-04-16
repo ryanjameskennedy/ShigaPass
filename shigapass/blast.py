@@ -13,15 +13,40 @@ class Blast:
         self.db = db
         self.threads = threads
 
-    def write_out(self, count_dict, outdir, filename, query)
-        with open(os.path.join(outdir, filename, f"{query}_hits.txt"), 'w') as f:
+    def parse_hits(self):
+        # Parse BLAST results and extract relevant information
+        # You can use Biopython's BLAST parser or custom parsing logic here
+        pass
+
+    def determine_rfb(self):
+        # Implement logic to determine the rfb type
+        pass
+
+    def determine_mlst(self):
+        # Implement logic to determine MLST based on BLAST results
+        pass
+
+    def determine_flic(self):
+        # Implement logic to determine fliC type
+        pass
+
+    def determine_crispr(self):
+        # Implement logic to determine CRISPR type
+        pass
+
+    def combine_data(self):
+        # Combine the results to infer the serotype
+        pass
+
+    def write_out(self, count_dict, outdir, filename, db_marker):
+        with open(os.path.join(outdir, filename, f"{db_marker}_hits.txt"), 'w') as f:
             for gene, count in count_dict.items():
                 f.write(f"{gene};{count}\n")
 
-    def coverage_hits(self, outdir, input_filename, query):
-        with open(os.path.join(outdir, input_filename, f"{query}_hits.txt"), 'r') as f1, \
+    def coverage_hits(self, outdir, input_filename, db_marker):
+        with open(os.path.join(outdir, input_filename, f"{db_marker}_hits.txt"), 'r') as f1, \
             open(os.path.join(self.db, 'RFB_hits_count.csv'), 'r') as f2, \
-            open(os.path.join(outdir, input_filename, f"{query}_hitscoverage.txt"), 'w') as f3:
+            open(os.path.join(outdir, input_filename, f"{db_marker}_hitscoverage.txt"), 'w') as f3:
             for line in f1:
                 parts1 = line.strip().split(';')
                 for line2 in f2:

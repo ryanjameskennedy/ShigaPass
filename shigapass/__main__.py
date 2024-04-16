@@ -17,7 +17,7 @@ Description: This tool is used to predict Shigella serotypes.
 
 Usage: shigapass [options]
 Options:
-    -l, --list         List of input file(s) (FASTA) with their path(s) (mandatory)
+    -l, --list_file         List of input file(s) (FASTA) with their path(s) (mandatory)
     -o, --outdir       Output directory (mandatory)
     -p, --db           Path to databases directory (mandatory)
     -t, --threads      Number of threads (optional, default: 2)
