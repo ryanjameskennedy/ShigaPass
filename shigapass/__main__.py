@@ -1,5 +1,5 @@
-import os
 import sys
+import logging
 
 from .__version__ import VERSION
 from .cli import get_args
@@ -43,16 +43,22 @@ def main():
         print_help()
         sys.exit(0)
     else:
+        logging.basicConfig(
+            level=logging.INFO, 
+            format="[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
+        )
+        LOG = logging.getLogger(__name__)
+        LOG.info("Starting analysis")
         args = get_args().parse_args()
         sp_parser = OptionsParser(VERSION)
         sp_parser.parse_options(args)
     try:
-        print("Done")
+        LOG.info("Done")
     except SystemExit:
-        print("Controlled exit resulting from early termination.")
+        LOG.warn("Controlled exit resulting from early termination.")
         sys.exit(1)
     except KeyboardInterrupt:
-        print("Controlled exit resulting from interrupt signal.")
+        LOG.warn("Controlled exit resulting from interrupt signal.")
         sys.exit(1)
     except Exception as e:
         error_message = "Uncontrolled exit resulting from an unexpected error.\n\n"
@@ -60,41 +66,8 @@ def main():
         error_message += f"EXCEPTION: {type(e).__name__}\n"
         error_message += f"MESSAGE: {e}\n"
         error_message += "-" * 80 + "\n\n"
-        print(error_message)
+        LOG.warn(error_message)
         sys.exit(1)
-    """
-    LIST = "/path/to/list_of_fasta_files"
-    OUTDIR = "/path/to/output_directory"
-
-    # Iterate over files in a directory
-    for fasta_file in os.listdir(LIST):
-        if fasta_file.endswith(".fasta"):
-            # Perform analysis for each FASTA file
-            namedir = os.path.basename(fasta_file).replace(".fasta", "")
-            outdir_namedir = os.path.join(OUTDIR, namedir)
-
-            if not os.path.exists(outdir_namedir):
-                os.makedirs(outdir_namedir)
-            else:
-                # Clear existing files in the directory
-                files = os.listdir(outdir_namedir)
-                for file in files:
-                    os.remove(os.path.join(outdir_namedir, file))
-
-            # Copy and modify the FASTA file
-            with open(fasta_file, "r") as infile:
-                with open(os.path.join(outdir_namedir, f"{namedir}_parsed.fasta"), "w") as outfile:
-                    for record in SeqIO.parse(infile, "fasta"):
-                        record.id = record.id.replace("_", "~")
-                        SeqIO.write(record, outfile, "fasta")
-
-            # Run BLAST searches
-            run_blast(os.path.join(outdir_namedir, f"{namedir}_parsed.fasta"), "ipaH_150-mers.fasta", os.path.join(outdir_namedir, "ipaH_blast.txt"))
-            run_blast(os.path.join(outdir_namedir, f"{namedir}_parsed.fasta"), "RFB_serotypes_AtoC_150-mers_v2.fasta", os.path.join(outdir_namedir, "rfb_blast.txt"))
-            # Run other BLAST searches and analysis functions
-            
-            # Determine and write results to output files
-            """
 
 if __name__ == "__main__":
     main()
