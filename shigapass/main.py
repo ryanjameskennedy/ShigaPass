@@ -4,6 +4,7 @@ import os
 import sys
 
 from .blast import Blast
+from .typing import Typing
 
 class OptionsParser:
     """Class for options/arguments parser"""
@@ -18,10 +19,11 @@ class OptionsParser:
 
     def parse_options(self, options):
         blast = Blast(options.db, options.threads)
+        typing = Typing(blast)
         if not os.path.exists(options.outdir):
             os.makedirs(options.outdir)
 
         if options.mkdb:
             blast.make_blast_db()
 
-        blast.run(options.list_file, options.outdir, options.keep_files)
+        typing.run(options.list_file, options.outdir, options.keep_files)
