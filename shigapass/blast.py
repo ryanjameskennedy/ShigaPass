@@ -4,7 +4,7 @@ import os
 import subprocess
 import logging
 
-from .utils import dict_to_str, write_out, read_file, get_val_from_file
+from .utils import dict_to_str, write_out
 
 LOG = logging.getLogger(__name__)
 

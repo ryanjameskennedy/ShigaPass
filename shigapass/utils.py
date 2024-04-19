@@ -17,7 +17,10 @@ def read_file(input_filepath):
 
 def get_val_from_file(csv_file, sort_column, value_column, delimiter=";"):
     """Get the value from the specified column in the top row that has been sorted via the sort column"""
-    df = pd.read_csv(csv_file, delimiter=delimiter, header=None)
-    sorted_df = df.sort_values(by=sort_column)
-    top_row_value = sorted_df.iloc[0, value_column]
+    try:
+        df = pd.read_csv(csv_file, delimiter=delimiter, header=None)
+        sorted_df = df.sort_values(by=sort_column)
+        top_row_value = sorted_df.iloc[0, value_column]
+    except pd.errors.EmptyDataError:
+        top_row_value = ""
     return top_row_value

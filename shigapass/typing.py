@@ -120,6 +120,8 @@ class Typing:
         for st_dict in mlst_db_list:
             if all(st_dict.get(key) == value for key, value in search_dict.items()):
                 mlst = st_dict['ST']
+            else:
+                mlst = "~"
         return mlst
 
     def determine_mlst(self, outdir, input_filename, input_fasta_file):
@@ -144,17 +146,30 @@ class Typing:
             output = f"{gene}:{mlst_loci_dict[gene]}\n"
             mlst_loci_outfpath = os.path.join(outdir, input_filename, "mlst_alleles.txt")
             write_out(output, mlst_loci_outfpath, "a")
-            mlst = self.mlst_search(mlst_loci_dict, st_loci_missing) if not st_loci_missing else "-"
-            mlst_outfpath = os.path.join(outdir, input_filename, "mlst_ST.txt")
-            write_out(f"ST{mlst}", mlst_outfpath)
+        mlst = self.mlst_search(mlst_loci_dict) if not st_loci_missing else "-"
+        mlst_outfpath = os.path.join(outdir, input_filename, "mlst_ST.txt")
+        write_out(f"ST{mlst}", mlst_outfpath)
         return f"ST{mlst}"
 
     def determine_flic(self, outdir, input_filename, input_fasta_file):
         # Implement logic to determine fliC type
         search_parameters = self.get_db_array("flic")
         sorted_gene_counts, hits_coverage = self.blast.search(outdir, input_filename, input_fasta_file, search_parameters)
-        rfb, rfb_hits, rfb_coverage, flexserotype, comments = [""] * 5
-        if sorted_gene_counts:
+        flic_records_fpath = os.path.join(outdir, input_filename, "flic_allrecords.txt")
+        flic_top_hit = get_val_from_file(flic_records_fpath, 11, 1, "\t")
+        if flic_top_hit:
+            print(flic_top_hit)
+            flic = flic_top_hit.split("_")[1]
+        else:
+            blast_outfpath = os.path.join(outdir, input_filename, f"flic_blastout.txt")
+            filtered_blast_outfpath = os.path.join(outdir, input_filename, f"flic_allrecords.txt")
+            self.blast.filter_blast(blast_outfpath, filtered_blast_outfpath, 98, 45)
+            flic_top_hit = get_val_from_file(flic_records_fpath, 11, 1, "\t")
+            if flic_top_hit:
+                flic = flic_top_hit.split("_")[1]
+            else:
+                flic = ""
+        return flic
 
     def determine_crispr(self):
         # Implement logic to determine CRISPR type
@@ -240,6 +255,7 @@ class Typing:
                 else:
                     rfb, rfb_hits, rfb_coverage, flexserotype, comments = self.determine_rfb(outdir, input_filename, input_fasta_file)
                     mlst = self.determine_mlst(outdir, input_filename, input_fasta_file)
+                    flic = self.determine_flic(outdir, input_filename, input_fasta_file)
 
                 shutil.rmtree(tempdir)
                 if not keep_files:
