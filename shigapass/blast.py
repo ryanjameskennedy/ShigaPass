@@ -1,10 +1,7 @@
 """Module to handle blast requests"""
 
-import re
 import os
 import subprocess
-import shutil
-import tempfile
 import logging
 
 from .utils import dict_to_str, write_out, read_file, get_val_from_file

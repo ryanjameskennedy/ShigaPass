@@ -2,10 +2,10 @@
 
 import re
 import os
-import subprocess
 import shutil
 import tempfile
 import logging
+import pandas as pd
 
 from .config import db_config_array, db_alt_config_array, db_mlst_config_array, flex_score_array
 from .utils import write_out, read_file, get_val_from_file
@@ -109,11 +109,24 @@ class Typing:
                 LOG.info("Rfb blast completed")
             comments = self.check_multiple_rfbs(outdir, input_filename, "rfb", rfb)
         return rfb, rfb_hits, rfb_coverage, flexserotype, comments
+    
+    def mlst_search(self, search_dict):
+        """Search mlst db for allele matches"""
+        mlst_db_fpath = os.path.join(self.blast.db, "MLST/ST_profiles.txt")
+        mlst_db_df = pd.read_csv(mlst_db_fpath, delimiter="\t")
+
+        # Convert the DataFrame to a list of dictionaries
+        mlst_db_list = mlst_db_df.to_dict(orient="records")
+        for st_dict in mlst_db_list:
+            if all(st_dict.get(key) == value for key, value in search_dict.items()):
+                mlst = st_dict['ST']
+        return mlst
 
     def determine_mlst(self, outdir, input_filename, input_fasta_file):
         """Determine MLST based on BLAST results"""
         LOG.info("Determining MLST type for: %s" % input_filename)
         mlst_loci_dict = {}
+        st_loci_missing = False
         for mlst_array in db_mlst_config_array:
             gene = mlst_array["db_marker"]
             self.blast.run_blastn(outdir, input_filename, input_fasta_file,
@@ -126,14 +139,22 @@ class Typing:
                 mlst_loci_dict[gene] = st
             except KeyError:
                 mlst_loci_dict[gene] = gene
+                LOG.info("ST missing for: %s" % gene)
+                st_loci_missing = True
             output = f"{gene}:{mlst_loci_dict[gene]}\n"
-            mlst_outfpath = os.path.join(outdir, input_filename, "mlst_alleles.txt")
-            write_out(output, mlst_outfpath, "a")
+            mlst_loci_outfpath = os.path.join(outdir, input_filename, "mlst_alleles.txt")
+            write_out(output, mlst_loci_outfpath, "a")
+            mlst = self.mlst_search(mlst_loci_dict, st_loci_missing) if not st_loci_missing else "-"
+            mlst_outfpath = os.path.join(outdir, input_filename, "mlst_ST.txt")
+            write_out(f"ST{mlst}", mlst_outfpath)
+        return f"ST{mlst}"
 
-
-    def determine_flic(self):
+    def determine_flic(self, outdir, input_filename, input_fasta_file):
         # Implement logic to determine fliC type
-        pass
+        search_parameters = self.get_db_array("flic")
+        sorted_gene_counts, hits_coverage = self.blast.search(outdir, input_filename, input_fasta_file, search_parameters)
+        rfb, rfb_hits, rfb_coverage, flexserotype, comments = [""] * 5
+        if sorted_gene_counts:
 
     def determine_crispr(self):
         # Implement logic to determine CRISPR type
