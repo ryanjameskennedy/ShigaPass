@@ -51,8 +51,12 @@ class Blast:
         return hits_coverage
 
     def run_blastn(self, outdir, input_filename, input_fasta_file, db_fasta, db_marker, identity, coverage):
-        blast_cmd = f"blastn -db {self.db}/{db_fasta} -query {input_fasta_file} -out {os.path.join(outdir, input_filename, f"{db_marker}_blastout.txt")} -num_threads {self.threads} -num_alignments 10000 -outfmt 6 -word_size 11 -dust no"
-        subprocess.run(blast_cmd, shell=True, check=True)
+        #blast_cmd = f"blastn -db {self.db}/{db_fasta} -query {input_fasta_file} -out {os.path.join(outdir, input_filename, f"{db_marker}_blastout.txt")} -num_threads {self.threads} -num_alignments 10000 -outfmt 6 -word_size 11 -dust no"
+        blast_cmd = ["blastn", "-query", input_fasta_file, "-db", os.path.join(self.db, db_fasta),
+                     "-out", os.path.join(outdir, input_filename, f"{db_marker}_blastout.txt"),
+                     "-num_threads", str(self.threads), "-num_alignments", "10000", "-outfmt", "6",
+                     "-word_size", "11", "-dust", "no"]
+        subprocess.run(blast_cmd, check=True)
         blast_outfpath = os.path.join(outdir, input_filename, f"{db_marker}_blastout.txt")
         filtered_blast_outfpath = os.path.join(outdir, input_filename, f"{db_marker}_allrecords.txt")
         self.filter_blast(blast_outfpath, filtered_blast_outfpath, identity, coverage)
@@ -84,4 +88,5 @@ class Blast:
         for root, dirs, files in os.walk(self.db):
             for filename in files:
                 if filename.endswith(".fasta"):
-                    subprocess.run(f"makeblastdb -dbtype nucl -in {os.path.join(root, filename)}", shell=True, check=True)
+                    makeblastdb_cmd = ["makeblastdb", "-dbtype", "nucl", "-in", os.path.join(root, filename)]
+                    subprocess.run(makeblastdb_cmd, check=True)
