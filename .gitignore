@@ -8,6 +8,5 @@ dist/
 *.egg-info/
 
 # Database related
-db
-!db/*/*.fasta
+db/*/*.fasta.*
 test/Input/*.fasta
