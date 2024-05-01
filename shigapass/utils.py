@@ -15,15 +15,15 @@ def read_file(input_filepath):
         content = fin.read()
     return content
 
-def get_val_from_file(csv_file, sort_column, value_column, delimiter=";", ascending=True):
+def get_val_from_file(csv_file, sort_column, value_column, delimiter=";", ascending=True, num_of_rows=1):
     """Get the value from the specified column in the top row that has been sorted via the sort column"""
     try:
         df = pd.read_csv(csv_file, delimiter=delimiter, header=None)
         sorted_df = df.sort_values(by=sort_column, ascending=ascending)
-        top_row_value = sorted_df.iloc[0, value_column]
+        row_values = list(sorted_df.iloc[:num_of_rows, value_column])
     except pd.errors.EmptyDataError:
-        top_row_value = ""
-    return top_row_value
+        row_values = ""
+    return row_values
 
 def check_ascending(input_filepath, column_idx1, column_idx2):
     with open(input_filepath, "r") as fin:

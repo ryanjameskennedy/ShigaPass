@@ -67,7 +67,7 @@ class Typing:
             rfb, rfb_hits, rfb_coverage = self.determine_alt_rfb(outdir, input_filename, input_fasta_file, rfb, rfb_hits, rfb_coverage)
             if rfb == "A3b":
                 rfb_hits_fpath = os.path.join(outdir, input_filename, "rfb_hits.txt")
-                rfb = get_val_from_file(rfb_hits_fpath, 0, 0)
+                rfb = get_val_from_file(rfb_hits_fpath, 0, 0)[0]
                 if rfb == "A3a":
                     rfb = "A3"
                     LOG.info("Rfb has changed to %s; hits detected are unique for %s" % (rfb, rfb))
@@ -81,7 +81,7 @@ class Typing:
                 search_parameters = self.get_db_array("additionalrfb", "C1")
                 sorted_gene_counts, hits_coverage = self.blast.search(outdir, input_filename, input_fasta_file, search_parameters)
                 add_rfb_hits_fpath = os.path.join(outdir, input_filename, "additionalrfb_hits.txt")
-                rfb = get_val_from_file(add_rfb_hits_fpath, 1, 0)
+                rfb = get_val_from_file(add_rfb_hits_fpath, 1, 0)[0]
                 if rfb:
                     rfb == "C1"
                     LOG.info("Rfb has remained %s" % rfb)
@@ -97,8 +97,8 @@ class Typing:
                 search_parameters = self.get_db_array("additionalrfb", "C1")
                 sorted_gene_counts, hits_coverage = self.blast.search(outdir, input_filename, input_fasta_file, search_parameters)
                 add_rfb_hits_fpath = os.path.join(outdir, input_filename, "additionalrfb_hitscoverage.txt")
-                rfb_hits = get_val_from_file(add_rfb_hits_fpath, 3, 1)
-                rfb_coverage = get_val_from_file(add_rfb_hits_fpath, 3, 3)
+                rfb_hits = get_val_from_file(add_rfb_hits_fpath, 3, 1)[0]
+                rfb_coverage = get_val_from_file(add_rfb_hits_fpath, 3, 3)[0]
                 if rfb_hits >= 30:
                     rfb = "D"
                     LOG.info("Rfb has changed to %s" % rfb)
@@ -159,14 +159,14 @@ class Typing:
         search_parameters = self.get_db_array("flic")
         _, _ = self.blast.search(outdir, input_filename, input_fasta_file, search_parameters)
         flic_records_fpath = os.path.join(outdir, input_filename, "flic_allrecords.txt")
-        flic_top_hit = get_val_from_file(flic_records_fpath, 11, 1, "\t")
+        flic_top_hit = get_val_from_file(flic_records_fpath, 11, 1, "\t")[0]
         if flic_top_hit:
             flic = flic_top_hit.split("_")[1]
         else:
             blast_outfpath = os.path.join(outdir, input_filename, f"flic_blastout.txt")
             filtered_blast_outfpath = os.path.join(outdir, input_filename, f"flic_allrecords.txt")
             self.blast.filter_blast(blast_outfpath, filtered_blast_outfpath, 98, 45)
-            flic_top_hit = get_val_from_file(flic_records_fpath, 11, 1, "\t")
+            flic_top_hit = get_val_from_file(flic_records_fpath, 11, 1, "\t")[0]
             if flic_top_hit:
                 flic = flic_top_hit.split("_")[1]
             else:
@@ -177,16 +177,19 @@ class Typing:
         # Implement logic to determine CRISPR type
         search_parameters = self.get_db_array("crispr")
         _, _ = self.blast.search(outdir, input_filename, input_fasta_file, search_parameters)
-        crispr_records_fpath = os.path.join(outdir, input_filename, "crispr_allrecords.txt")
-        ascending = check_ascending(crispr_records_fpath, 8, 9)
-        crispr_top_hit = get_val_from_file(crispr_records_fpath, 11, 1, "\t", ascending)
-        if crispr_top_hit:
-            crispr = crispr_top_hit.split("_")[1]
+        crispr_allrecords_fpath = os.path.join(outdir, input_filename, "crispr_allrecords.txt")
+        crispr_records_fpath = os.path.join(outdir, input_filename, "crispr_records.txt")
+        ascending = check_ascending(crispr_allrecords_fpath, 8, 9)
+        crispr_hits = get_val_from_file(crispr_allrecords_fpath, 11, 1, "\t", ascending, 3)
+        if crispr_hits:
+            crispr = ";".join([crispr_hit.split("_")[1] for crispr_hit in crispr_hits])
+            write_out(crispr, crispr_records_fpath)
         return crispr
 
-    def combine_data(self):
-        # Combine the results to infer the serotype
-        pass
+    def determine_serotype(self, rfb, rfb_hits, rfb_coverage, flexserotype, comments, mlst, flic, crispr):
+        """Combine the results to infer the serotype"""
+        serotype = f"{rfb},{rfb_hits},{rfb_coverage},{flexserotype},{comments},{mlst},{flic},{crispr}"
+        return serotype
 
     def check_multiple_rfbs(self, outdir, input_filename, db_marker, rfb):
         comments = ""
@@ -266,6 +269,7 @@ class Typing:
                     mlst = self.determine_mlst(outdir, input_filename, input_fasta_file)
                     flic = self.determine_flic(outdir, input_filename, input_fasta_file)
                     crispr = self.determine_crispr(outdir, input_filename, input_fasta_file)
+                    serotype = self.determine_serotype(rfb, rfb_hits, rfb_coverage, flexserotype, comments, mlst, flic, crispr)
 
                 shutil.rmtree(tempdir)
                 if not keep_files:
