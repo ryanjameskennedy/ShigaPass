@@ -6,7 +6,7 @@ import logging
 
 from .utils import dict_to_str, write_out
 
-LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 class Blast:
     """Class for Blast arguments"""
@@ -26,28 +26,32 @@ class Blast:
         outfpath = os.path.join(outdir, input_filename, f"{db_marker}_hits.txt")
         content = dict_to_str(sorted_gene_counts)
         write_out(content, outfpath)
-        LOG.info("The gene hits output was written to: %s" % outfpath)
+        logger.info("The gene hits output was written to: %s" % outfpath)
         return sorted_gene_counts
 
     def coverage_hits(self, outdir, input_filename, db_marker):
         hits_fpath = os.path.join(outdir, input_filename, f"{db_marker}_hits.txt")
         rfb_hits_count_fpath = os.path.join(self.db, "RFB_hits_count.csv")
         hitscov_fpath = os.path.join(outdir, input_filename, f"{db_marker}_hitscoverage.txt")
-        hits_coverage = ""
-        with open(hits_fpath, "r") as fin1, \
-            open(rfb_hits_count_fpath, "r") as fin2, \
-            open(hitscov_fpath, "w") as fout:
+
+        # Read reference hit counts
+        ref_counts = {}
+        with open(rfb_hits_count_fpath, "r") as fin2:
+            for line2 in fin2:
+                parts2 = line2.rstrip().split(";")
+                if len(parts2) >= 2:
+                    ref_counts[parts2[0]] = parts2[1]
+
+        hits_coverage = 0
+        with open(hits_fpath, "r") as fin1, open(hitscov_fpath, "w") as fout:
             for line in fin1:
                 parts1 = line.rstrip().split(";")
-                for line2 in fin2:
-                    parts2 = line2.rstrip().split(";")
-                    if parts1[0] == parts2[0]:
-                        hits_coverage = float(parts1[1]) / float(parts2[1]) * 100
-                        fout.write(f"{line.rstrip()};{parts2[1]};{hits_coverage}\n")
-                        break
-            if not hits_coverage:
-                fout.write("")
-            LOG.info("The hits coverage was written to: %s" % hitscov_fpath)
+                if len(parts1) >= 2 and parts1[0] in ref_counts:
+                    hits_coverage = float(parts1[1]) / float(ref_counts[parts1[0]]) * 100
+                    fout.write(f"{line.rstrip()};{ref_counts[parts1[0]]};{hits_coverage:.2f}\n")
+                    break
+
+        logger.info("The hits coverage was written to: %s" % hitscov_fpath)
         return hits_coverage
 
     def run_blastn(self, outdir, input_filename, input_fasta_file, db_fasta, db_marker, identity, coverage):
@@ -73,7 +77,7 @@ class Blast:
                     q_len = float(parts[1].split(":")[-1])
                 if float(parts[2]) >= identity and (length / q_len) * 100 >= coverage:
                     fout.write(line)
-        LOG.info("The blast filtered output was written to: %s" % filtered_blast_outfpath)
+        logger.info("The blast filtered output was written to: %s" % filtered_blast_outfpath)
 
     def search(self, outdir, input_filename, input_fasta_file, db_array):
         search_parameters = db_array[0]

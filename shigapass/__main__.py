@@ -10,7 +10,7 @@ def print_help():
     """Print help output"""
     print(f"""
                     ...::: ShigaPass v{VERSION} :::...
-Author(s): Iman Yassine
+Author(s): Iman Yassine & Ryan Kennedy
 
 Description: This tool is used to predict Shigella serotypes.
 
@@ -32,7 +32,6 @@ NOTE: The -u option should be used when running the script for the first time an
 
 def main():
     """Main function for initiating software"""
-    args = None
     if len(sys.argv) == 1:
         print_help()
         sys.exit(0)
@@ -42,23 +41,24 @@ def main():
     elif sys.argv[1] in {"-h", "--h", "-help", "--help"}:
         print_help()
         sys.exit(0)
-    else:
-        logging.basicConfig(
-            level=logging.INFO, 
-            format="[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
-        )
-        LOG = logging.getLogger(__name__)
-        LOG.info("Starting analysis")
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
+    )
+    logger = logging.getLogger(__name__)
+
+    try:
+        logger.info("Starting analysis")
         args = get_args().parse_args()
         sp_parser = OptionsParser(VERSION)
         sp_parser.parse_options(args)
-    try:
-        LOG.info("Done")
+        logger.info("Analysis completed successfully")
     except SystemExit:
-        LOG.warn("Controlled exit resulting from early termination.")
+        logger.warning("Controlled exit resulting from early termination.")
         sys.exit(1)
     except KeyboardInterrupt:
-        LOG.warn("Controlled exit resulting from interrupt signal.")
+        logger.warning("Controlled exit resulting from interrupt signal.")
         sys.exit(1)
     except Exception as e:
         error_message = "Uncontrolled exit resulting from an unexpected error.\n\n"
@@ -66,7 +66,7 @@ def main():
         error_message += f"EXCEPTION: {type(e).__name__}\n"
         error_message += f"MESSAGE: {e}\n"
         error_message += "-" * 80 + "\n\n"
-        LOG.warn(error_message)
+        logger.error(error_message)
         sys.exit(1)
 
 if __name__ == "__main__":
